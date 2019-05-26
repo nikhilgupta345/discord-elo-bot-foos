@@ -1,0 +1,33 @@
+version: '3'
+
+services:
+  db:
+    image: postgres
+    restart: always
+    container_name: postgres
+    volumes:
+        - ./data:/var/lib/postgresql/data
+  elo-service:
+    build: ./elo_service
+    restart: always
+    command: bash -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    container_name: elo_service
+    volumes:
+      - ./elo_service:/code
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+  discord-bot:
+    restart: always
+    build: ./discord_bot
+    command: python main.py
+    container_name: discord_bot
+    volumes:
+      - ./discord_bot:/code
+    depends_on:
+      - elo-service
+    environment:
+      - DISCORD_CLIENT_ID
+      - DISCORD_CLIENT_SECRET
+      - DISCORD_TOKEN
